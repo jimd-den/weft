@@ -40,6 +40,17 @@ class MainViewModel(
     private val _isSettingsSheetVisible = MutableStateFlow(false)
     val isSettingsSheetVisible = _isSettingsSheetVisible.asStateFlow()
 
+    private val _isAgentSheetVisible = MutableStateFlow(false)
+    val isAgentSheetVisible = _isAgentSheetVisible.asStateFlow()
+
+    private val _chatHistory = MutableStateFlow<List<com.example.data.remote.ChatMessage>>(
+        listOf(com.example.data.remote.ChatMessage("system", "You are the WEFT LCARS AI Agent. You help users analyze text and learn. If the user asks you to create or add a new source/document, reply EXACTLY with this format and nothing else:\n[ADD_SOURCE] Title ||| Content"))
+    )
+    val chatHistory = _chatHistory.asStateFlow()
+    
+    private val _isAgentThinking = MutableStateFlow(false)
+    val isAgentThinking = _isAgentThinking.asStateFlow()
+
     val openRouterApiKey = prefs.apiKeyFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     val selectedAgent = prefs.selectedAgentFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "google/gemini-2.5-flash")
 
@@ -77,6 +88,54 @@ class MainViewModel(
         }
     }
     
+    fun sendAgentMessage(text: String) {
+        viewModelScope.launch {
+            val userMsg = com.example.data.remote.ChatMessage("user", text)
+            _chatHistory.value = _chatHistory.value + userMsg
+            _isAgentThinking.value = true
+            
+            val contextMsgs = if (_currentSourceId.value != null) {
+                val currentText = currentSource.value?.content?.take(1000) ?: ""
+                _chatHistory.value + com.example.data.remote.ChatMessage("system", "Context of current open document: $currentText")
+            } else {
+                _chatHistory.value
+            }
+
+            val aiResponse = aiRepository.chat(contextMsgs)
+            if (aiResponse != null) {
+                if (aiResponse.content.contains("[ADD_SOURCE]")) {
+                    try {
+                        val parts = aiResponse.content.substringAfter("[ADD_SOURCE]").split("|||")
+                        if (parts.size == 2) {
+                            val title = parts[0].trim()
+                            val content = parts[1].trim()
+                            
+                            val id = java.util.UUID.randomUUID().toString().take(6)
+                            val newSource = SourceEntity(
+                                id = "0x$id",
+                                title = title,
+                                content = content,
+                                readingTimeMn = content.split(Regex("\\s+")).size / 200,
+                                yearTag = "NEW"
+                            )
+                            repository.addSource(newSource)
+                            _chatHistory.value = _chatHistory.value + com.example.data.remote.ChatMessage("assistant", "Source '$title' created!")
+                        } else {
+                            _chatHistory.value = _chatHistory.value + aiResponse
+                        }
+                    } catch (e: Exception) {
+                        _chatHistory.value = _chatHistory.value + aiResponse
+                    }
+                } else {
+                    _chatHistory.value = _chatHistory.value + aiResponse
+                }
+            } else {
+                _chatHistory.value = _chatHistory.value + com.example.data.remote.ChatMessage("assistant", "Failed to connect to agent. Please check your OpenRouter key.")
+            }
+            _isAgentThinking.value = false
+        }
+    }
+
     val notes: StateFlow<List<NoteEntity>> = _currentSourceId.flatMapLatest { id ->
         if (id == null) kotlinx.coroutines.flow.flowOf(emptyList())
         else repository.getNotes(id)
@@ -120,6 +179,10 @@ class MainViewModel(
 
     fun showSettingsSheet(show: Boolean) {
         _isSettingsSheetVisible.value = show
+    }
+
+    fun showAgentSheet(show: Boolean) {
+        _isAgentSheetVisible.value = show
     }
 
     fun captureHighlight(text: String) {

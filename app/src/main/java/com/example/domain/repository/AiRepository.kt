@@ -55,4 +55,23 @@ class AiRepository(
             null
         }
     }
+    
+    suspend fun chat(messages: List<ChatMessage>): ChatMessage? = withContext(Dispatchers.IO) {
+        val apiKey = prefs.apiKeyFlow.first() ?: return@withContext null
+        val model = prefs.selectedAgentFlow.first()
+        
+        try {
+            val response = api.createChatCompletion(
+                authHeader = "Bearer $apiKey",
+                request = ChatCompletionRequest(
+                    model = model,
+                    messages = messages
+                )
+            )
+            response.choices?.firstOrNull()?.message
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 }

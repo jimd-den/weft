@@ -15,7 +15,111 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.SourceEntity
+import com.example.data.remote.ChatMessage
 import com.example.ui.theme.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AgentSheet(
+    chatHistory: List<ChatMessage>,
+    isSending: Boolean,
+    onSendMessage: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var text by remember { mutableStateOf("") }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = LcarsBg2,
+        modifier = Modifier.fillMaxHeight(0.9f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp)
+                .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "AGENT TERMINAL",
+                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.sp),
+                color = LcarsSurvey
+            )
+            
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(chatHistory) { msg ->
+                    if (msg.role != "system") {
+                        val isUser = msg.role == "user"
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        if (isUser) LcarsSurvey else Color(0xFF2A2A34),
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(12.dp)
+                                    .widthIn(max = 300.dp)
+                            ) {
+                                Text(
+                                    text = msg.content,
+                                    color = if (isUser) LcarsBlack else LcarsText,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+                if (isSending) {
+                    item {
+                        Text("Thinking...", color = LcarsDim, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    modifier = Modifier.weight(1f),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    placeholder = { Text("Command the agent...", color = LcarsDim) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = LcarsSurvey,
+                        unfocusedBorderColor = Color(0xFF2A2A34),
+                        focusedTextColor = LcarsText,
+                        unfocusedTextColor = LcarsText
+                    )
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "SND",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = LcarsBlack,
+                    modifier = Modifier
+                        .background(LcarsSurvey, RoundedCornerShape(6.dp))
+                        .clickable {
+                            if (text.isNotBlank() && !isSending) {
+                                onSendMessage(text)
+                                text = ""
+                            }
+                        }
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun BridgeScreen(

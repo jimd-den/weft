@@ -31,11 +31,13 @@ import com.example.ui.theme.*
 fun LcarsTopBar(
     isSoundOn: Boolean,
     onSoundToggle: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onAgentClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .padding(horizontal = 22.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -43,18 +45,38 @@ fun LcarsTopBar(
         Text(
             text = "LCARS·WEFT 47-R",
             style = MaterialTheme.typography.labelMedium,
-            color = LcarsRead,
-            modifier = Modifier.clickable { onSettingsClick() }
+            color = LcarsRead
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text(
-                text = "THREAD: ROME",
-                style = MaterialTheme.typography.labelSmall,
-                color = LcarsDim
-            )
+            Surface(
+                modifier = Modifier.clickable { onSettingsClick() },
+                shape = RoundedCornerShape(999.dp),
+                color = Color.Transparent,
+                border = androidx.compose.foundation.BorderStroke(1.dp, LcarsDim)
+            ) {
+                Text(
+                    text = "⚙ SETTINGS",
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = LcarsDim
+                )
+            }
+            Surface(
+                modifier = Modifier.clickable { onAgentClick() },
+                shape = RoundedCornerShape(999.dp),
+                color = LcarsSurvey,
+                border = androidx.compose.foundation.BorderStroke(1.dp, LcarsSurvey)
+            ) {
+                Text(
+                    text = "🤖 AGENT",
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = LcarsBlack
+                )
+            }
             Surface(
                 modifier = Modifier.clickable { onSoundToggle() },
                 shape = RoundedCornerShape(999.dp),

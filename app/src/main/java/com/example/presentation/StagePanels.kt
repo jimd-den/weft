@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +33,7 @@ fun StagePanels(
     notes: List<NoteEntity>,
     questions: List<QuestionEntity>,
     onCaptureHighlight: (String) -> Unit,
+    onCaptureQuestion: (String) -> Unit,
     onExitThread: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -77,9 +80,9 @@ fun StagePanels(
             if (currentSource == null) return@Box
             when (currentStage) {
                 Stage.SURVEY -> SurveyPanel(currentSource, accentColor)
-                Stage.QUESTION -> QuestionPanel(questions, accentColor)
+                Stage.QUESTION -> QuestionPanel(questions, accentColor, onCaptureQuestion)
                 Stage.READ -> ReadPanel(currentSource, accentColor, onCaptureHighlight)
-                Stage.RECORD -> RecordPanel(notes, accentColor)
+                Stage.RECORD -> RecordPanel(notes, accentColor, onCaptureHighlight)
                 Stage.RECITE -> RecitePanel()
                 Stage.REVIEW -> ReviewPanel()
                 Stage.REFLECT -> ReflectPanel(accentColor)
@@ -133,7 +136,8 @@ fun SurveyPanel(source: com.example.data.local.SourceEntity, accentColor: Color)
 }
 
 @Composable
-fun QuestionPanel(questions: List<QuestionEntity>, accentColor: Color) {
+fun QuestionPanel(questions: List<QuestionEntity>, accentColor: Color, onAddQuestion: (String) -> Unit) {
+    var newQuestion by remember { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (questions.isEmpty()) {
             NoteItem(src = "GENERATING...", text = "Agents are processing the text or no questions found.", accentColor = accentColor)
@@ -141,6 +145,36 @@ fun QuestionPanel(questions: List<QuestionEntity>, accentColor: Color) {
             questions.forEach { q ->
                 NoteItem(src = "Q · BEFORE READING", text = q.text, accentColor = accentColor)
             }
+        }
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = newQuestion,
+                onValueChange = { newQuestion = it },
+                modifier = Modifier.weight(1f),
+                textStyle = MaterialTheme.typography.bodyMedium,
+                placeholder = { Text("Add a manual question...", color = LcarsDim) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = accentColor,
+                    unfocusedBorderColor = Color(0xFF2A2A34),
+                    focusedTextColor = LcarsText,
+                    unfocusedTextColor = LcarsText
+                )
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "ADD",
+                style = MaterialTheme.typography.labelSmall,
+                color = LcarsBlack,
+                modifier = Modifier
+                    .background(accentColor, RoundedCornerShape(4.dp))
+                    .clickable { 
+                        if (newQuestion.isNotBlank()) {
+                            onAddQuestion(newQuestion)
+                            newQuestion = ""
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            )
         }
         Hint("TWO QUESTIONS EARN YOU A FOCUSED READ")
     }
@@ -170,7 +204,8 @@ fun ReadPanel(source: com.example.data.local.SourceEntity, accentColor: Color, o
 }
 
 @Composable
-fun RecordPanel(notes: List<NoteEntity>, accentColor: Color) {
+fun RecordPanel(notes: List<NoteEntity>, accentColor: Color, onAddNote: (String) -> Unit) {
+    var newNote by remember { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (notes.isEmpty()) {
             NoteItem(src = "AWAITING NOTES", text = "Tap lines in READ to capture notes.", accentColor = accentColor)
@@ -178,6 +213,36 @@ fun RecordPanel(notes: List<NoteEntity>, accentColor: Color) {
             notes.forEach { note ->
                 NoteItem(src = "NOTE ◂ from highlight", text = note.text, accentColor = accentColor)
             }
+        }
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = newNote,
+                onValueChange = { newNote = it },
+                modifier = Modifier.weight(1f),
+                textStyle = MaterialTheme.typography.bodyMedium,
+                placeholder = { Text("Add manual note...", color = LcarsDim) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = accentColor,
+                    unfocusedBorderColor = Color(0xFF2A2A34),
+                    focusedTextColor = LcarsText,
+                    unfocusedTextColor = LcarsText
+                )
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "ADD",
+                style = MaterialTheme.typography.labelSmall,
+                color = LcarsBlack,
+                modifier = Modifier
+                    .background(accentColor, RoundedCornerShape(4.dp))
+                    .clickable { 
+                        if (newNote.isNotBlank()) {
+                            onAddNote(newNote)
+                            newNote = ""
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            )
         }
         Hint("ONE IDEA PER NOTE ▸ IN YOUR OWN WORDS")
     }

@@ -22,6 +22,10 @@ fun WeftScreen(viewModel: MainViewModel) {
     
     val showCapture by viewModel.isCaptureSheetVisible.collectAsStateWithLifecycle()
     val showSettings by viewModel.isSettingsSheetVisible.collectAsStateWithLifecycle()
+    val showAgent by viewModel.isAgentSheetVisible.collectAsStateWithLifecycle()
+    val isAgentThinking by viewModel.isAgentThinking.collectAsStateWithLifecycle()
+    val chatHistory by viewModel.chatHistory.collectAsStateWithLifecycle()
+    
     val apiKey by viewModel.openRouterApiKey.collectAsStateWithLifecycle()
     val agent by viewModel.selectedAgent.collectAsStateWithLifecycle()
 
@@ -32,7 +36,8 @@ fun WeftScreen(viewModel: MainViewModel) {
                 LcarsTopBar(
                     isSoundOn = isSoundOn,
                     onSoundToggle = { viewModel.toggleSound() },
-                    onSettingsClick = { viewModel.showSettingsSheet(true) }
+                    onSettingsClick = { viewModel.showSettingsSheet(true) },
+                    onAgentClick = { viewModel.showAgentSheet(true) }
                 )
                 LcarsDivider()
             }
@@ -67,6 +72,7 @@ fun WeftScreen(viewModel: MainViewModel) {
                 notes = notes,
                 questions = questions,
                 onCaptureHighlight = { viewModel.captureHighlight(it) },
+                onCaptureQuestion = { viewModel.captureQuestion(it) },
                 onExitThread = { viewModel.clearSourceId() },
                 modifier = Modifier
                     .fillMaxSize()
@@ -81,6 +87,15 @@ fun WeftScreen(viewModel: MainViewModel) {
         CaptureSheet(
             onDismiss = { viewModel.showCaptureSheet(false) },
             onSubmit = { viewModel.captureSource(it) }
+        )
+    }
+    
+    if (showAgent) {
+        AgentSheet(
+            chatHistory = chatHistory,
+            isSending = isAgentThinking,
+            onSendMessage = { viewModel.sendAgentMessage(it) },
+            onDismiss = { viewModel.showAgentSheet(false) }
         )
     }
     
