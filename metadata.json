@@ -1,0 +1,6 @@
+{
+  "name": "WEFT",
+  "description": "LCARS · WEFT 47-R",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
